@@ -1,54 +1,145 @@
 using UnityEngine;
 
 /// <summary>
-/// Handles player movement, jumping, and dashing functionalities.
+/// Handles the movement mechanics of the player, including walking, jumping, wall jumping, and dashing.
 /// </summary>
 public class PlayerMovement : MonoBehaviour
 {
+    /// <summary>
+    /// The speed at which the player moves horizontally.
+    /// </summary>
     public float moveSpeed = 6f;
+
+    /// <summary>
+    /// The force applied when the player jumps.
+    /// </summary>
     public float jumpForce = 8f;
+
+    /// <summary>
+    /// The horizontal force applied when the player jumps off a wall.
+    /// </summary>
     public float wallJumpHorizontalForce = 2.5f;
+
+    /// <summary>
+    /// Multiplier for the vertical force applied when the player jumps off a wall.
+    /// </summary>
     public float wallJumpVerticalMultiplierForce = 1f;
+
+    /// <summary>
+    /// Duration for which the horizontal force is applied during a wall jump.
+    /// </summary>
     public float jumpHorizontalForceDuration = 0.35f;
+
+    /// <summary>
+    /// Cooldown time between dashes.
+    /// </summary>
     public float dashCooldown = 0.6f;
+
+    /// <summary>
+    /// Duration for which the vertical dash lasts.
+    /// </summary>
     public float verticalDashDuration = 0.3f;
+
+    /// <summary>
+    /// Falling speed when grabbing a wall.
+    /// </summary>
     public float grabbingFallSpeed = -1f;
+
+    /// <summary>
+    /// Maximum falling speed of the player.
+    /// </summary>
     public float maxFallSpeed = 15f;
 
+    /// <summary>
+    /// Power of the player's dash.
+    /// </summary>
     public float dashPower = 100f;
 
+    /// <summary>
+    /// Number of allowable second jumps.
+    /// </summary>
     public int nSecondJumps = 1;
 
+    // Reference to the Rigidbody2D component.
     private Rigidbody2D _rigidbody2D;
+
+    // Whether the player is touching the ground.
     private bool _isGrounded;
+
+    // Whether the player is touching a wall on the left.
     private bool _isTouchingWallLeft;
+
+    // Whether the player is touching a wall on the right.
     private bool _isTouchingWallRight;
+
+    // Whether the player is touching any wall.
     private bool _isTouchingWall;
+
+    // Whether the player is grabbing a wall on the left.
     private bool _isGrabbingWallLeft;
+
+    // Whether the player is grabbing a wall on the right.
     private bool _isGrabbingWallRight;
+
+    // Whether the player is grabbing any wall.
     private bool _isGrabbingWall;
+
+    // Whether the player is currently performing a wall jump.
     private bool _wallJumping;
+
+    // Whether the player can slide down a wall.
     private bool _canSlide;
+
+    // Whether the player is currently falling.
     private bool _isFalling;
+
+    // Whether the player is currently airborne.
     private bool _inTheAir;
+
+    // Current horizontal direction the player is looking towards.
     private float _lookingHDirection;
+
+    // Current vertical direction the player is looking towards.
     private float _lookingVDirection;
     
+    // Whether the player's movement is enabled or disabled.
     private bool _movementEnabled = true;
 
+    /// <summary>
+    /// Reference point for checking if the player is on the ground.
+    /// </summary>
     public Transform groundCheck;
+
+    /// <summary>
+    /// Reference point for checking if the player is touching a wall on the left.
+    /// </summary>
     public Transform wallCheckLeft;
+
+    /// <summary>
+    /// Reference point for checking if the player is touching a wall on the right.
+    /// </summary>
     public Transform wallCheckRight;
+
+    /// <summary>
+    /// Radius for checking ground or wall collisions.
+    /// </summary>
     public float checkRadius = 0.1f;
+
+    /// <summary>
+    /// Layer mask to determine what is considered ground.
+    /// </summary>
     public LayerMask whatIsGround;
 
+    // Start is called before the first frame update
     private void Start()
     {
         _rigidbody2D = GetComponent<Rigidbody2D>();
     }
 
+    // Maximum velocity of the player
     private float _maxVelocity = 100f;
 
+    // FixedUpdate is called once per physics frame
     private void FixedUpdate()
     {
         HandleMovement();
@@ -106,14 +197,14 @@ public class PlayerMovement : MonoBehaviour
     private bool CanDoubleJump()
     {
         bool wPressed = Input.GetKey(KeyCode.W);
-        if (wPressed && !_jumpedWithW && !_wallJumping && _inTheAir && _consecutiveJumpsMade < nSecondJumps)
+        if (wPressed && !_jumpedWithKeyPress && !_wallJumping && _inTheAir && _consecutiveJumpsMade < nSecondJumps)
         {
             return true;
         }
 
         if (!wPressed)
         {
-            _jumpedWithW = false;
+            _jumpedWithKeyPress = false;
         }
 
         return false;
@@ -227,7 +318,7 @@ public class PlayerMovement : MonoBehaviour
             Invoke(nameof(ResetMovementDisabled), 0.4f);
         }
     }
-
+    
     private void HandleMovement()
     {
         UpdateHorizontalLookDirection();
@@ -255,9 +346,9 @@ public class PlayerMovement : MonoBehaviour
         _lookingVDirection = Input.GetAxis("Vertical");
     }
 
-
-    private Vector2 _boxSize = new Vector2(0.1f, 1f); // Box width is 0.1, height is half of the player's height
-
+    // Box for ground check
+    private Vector2 _boxSize = new Vector2(0.1f, 1f);
+    
     private bool IsTouchingGround()
     {
         return Physics2D.OverlapBox(groundCheck.position, _boxSize, 0f, whatIsGround);
@@ -275,20 +366,19 @@ public class PlayerMovement : MonoBehaviour
         return Physics2D.OverlapBox(boxPosition, _boxSize, 0f, whatIsGround);
     }
 
-    private bool _jumpedWithW;
-
+    private bool _jumpedWithKeyPress;
     
     private bool CanJump()
     {
         bool wPressed = Input.GetKey(KeyCode.W);
-        if (wPressed && !_jumpedWithW && !_wallJumping && (_isGrounded || _isTouchingWallLeft || _isTouchingWallRight))
+        if (wPressed && !_jumpedWithKeyPress && !_wallJumping && (_isGrounded || _isTouchingWallLeft || _isTouchingWallRight))
         {
             return true;
         }
 
         if (!wPressed)
         {
-            _jumpedWithW = false;
+            _jumpedWithKeyPress = false;
         }
         return false;
     }
@@ -297,13 +387,13 @@ public class PlayerMovement : MonoBehaviour
     {
         ResetVelocities();
         PerformJumpWithDirection();
-        _jumpedWithW = true;
+        _jumpedWithKeyPress = true;
     }
 
     private void PerformConsecutiveJump()
     {
         RegularJump();
-        _jumpedWithW = true;
+        _jumpedWithKeyPress = true;
         _consecutiveJumpsMade++;
     }
 
