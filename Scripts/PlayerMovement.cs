@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -294,29 +296,23 @@ public class PlayerMovement : MonoBehaviour
     {
         _dashed = false;
     }
-    
-    //Pushes the player in a direction, the direction value should range from -1 to 1
-    private void GetPushed(Vector2 direction, float pushPower=10f)
+    public void GetPushedByEnemy(Vector2 direction, float pushPower)
+    {
+        // Game the script for this object PlayerCombat
+        if (PlayerCombat.IsInvincible()) return;
+        _movementEnabled = false;
+        PushPlayerInDirection(direction, pushPower);
+        Invoke(nameof(EnableMovement), 0.4f);
+    }
+
+    private void PushPlayerInDirection(Vector2 direction, float pushPower)
     {
         ResetVelocities();
         _rigidbody2D.AddForce(direction * pushPower, ForceMode2D.Impulse);
     }
-
-    private void OnCollisionEnter2D(Collision2D other)
+    private void EnableMovement()
     {
-        ApplyMovementDisplacementWhenDamaged(other);
-    }
-
-    private void ApplyMovementDisplacementWhenDamaged(Collision2D other)
-    {
-        if (other.gameObject.CompareTag("Enemy"))
-        {
-            _movementEnabled = false;
-            Vector2 direction = transform.position - other.transform.position;
-            direction.Normalize();
-            GetPushed(direction);
-            Invoke(nameof(ResetMovementDisabled), 0.4f);
-        }
+        _movementEnabled = true;
     }
     
     private void HandleMovement()
@@ -472,8 +468,15 @@ public class PlayerMovement : MonoBehaviour
         _wallJumping = false;
     }
     
-    private void ResetMovementDisabled()
+    private PlayerCombat _lazyPlayerCombat; 
+    private PlayerCombat PlayerCombat
     {
-        _movementEnabled = true;
+        get
+        {
+            if (_lazyPlayerCombat != null) return _lazyPlayerCombat;
+            _lazyPlayerCombat = GetComponent<PlayerCombat>();
+
+            return _lazyPlayerCombat;
+        }
     }
 }
