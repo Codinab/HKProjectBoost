@@ -87,7 +87,7 @@ public class PlayerMovement : MonoBehaviour
     private bool _isGrabbingWall;
 
     // Whether the player is currently performing a wall jump.
-    private bool _wallJumping;
+    private bool _wallJumped;
 
     // Whether the player can slide down a wall.
     private bool _canSlide;
@@ -168,7 +168,7 @@ public class PlayerMovement : MonoBehaviour
             PerformJump();
             return true;
         }
-        else if (CanDoubleJump())
+        if (CanDoubleJump())
         {
             PerformConsecutiveJump();
             return true;
@@ -199,14 +199,14 @@ public class PlayerMovement : MonoBehaviour
     private bool CanDoubleJump()
     {
         bool wPressed = Input.GetKey(KeyCode.W);
-        if (wPressed && !_jumpedWithKeyPress && !_wallJumping && _inTheAir && _consecutiveJumpsMade < nSecondJumps)
+        if (wPressed && !_jumped && !_wallJumped && _inTheAir && _consecutiveJumpsMade < nSecondJumps)
         {
             return true;
         }
 
         if (!wPressed)
         {
-            _jumpedWithKeyPress = false;
+            _jumped = false;
         }
 
         return false;
@@ -229,12 +229,12 @@ public class PlayerMovement : MonoBehaviour
 
     private bool CanDashVertical()
     {
-        return Input.GetKey(KeyCode.S) && Input.GetKey(KeyCode.B) && !_dashed && !_verticalDashCooldownActive && !_wallJumping;
+        return Input.GetKey(KeyCode.S) && Input.GetKey(KeyCode.B) && !_dashed && !_verticalDashCooldownActive && !_wallJumped;
     }
 
     private bool CanDashHorizontal()
     {
-        return (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)) && Input.GetKey(KeyCode.B) && !_dashed && !_horizontalDashCooldownActive && !_wallJumping;
+        return (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)) && Input.GetKey(KeyCode.B) && !_dashed && !_horizontalDashCooldownActive && !_wallJumped;
     }
 
     private void PerformDashVertical()
@@ -326,7 +326,7 @@ public class PlayerMovement : MonoBehaviour
     private void HandeHorizontalMovement()
     {
         // Only apply regular movement if not in a wall jump state
-        if (!_wallJumping && _movementEnabled)
+        if (!_wallJumped && _movementEnabled)
         {
             _rigidbody2D.velocity = new Vector2(_lookingHDirection * moveSpeed, _rigidbody2D.velocity.y);
         }
@@ -362,40 +362,42 @@ public class PlayerMovement : MonoBehaviour
         return Physics2D.OverlapBox(boxPosition, _boxSize, 0f, whatIsGround);
     }
 
-    private bool _jumpedWithKeyPress;
+    private bool _jumped;
     
     private bool CanJump()
     {
         bool wPressed = Input.GetKey(KeyCode.W);
-        if (wPressed && !_jumpedWithKeyPress && !_wallJumping && (_isGrounded || _isTouchingWallLeft || _isTouchingWallRight))
+        if (wPressed && !_jumped && !_wallJumped && (_isGrounded || _isTouchingWallLeft || _isTouchingWallRight))
         {
             return true;
         }
 
         if (!wPressed)
         {
-            _jumpedWithKeyPress = false;
+            _jumped = false;
         }
         return false;
     }
 
     private void PerformJump()
     {
+        Debug.Log("Performing jump");
         ResetVelocities();
         PerformJumpWithDirection();
-        _jumpedWithKeyPress = true;
+        _jumped = true;
     }
 
     private void PerformConsecutiveJump()
     {
+        Debug.Log("Performing consecutive jump");
         RegularJump();
-        _jumpedWithKeyPress = true;
+        _jumped = true;
         _consecutiveJumpsMade++;
     }
 
     private void HandleWallGrabbing()
     {
-        if (!_isGrounded && !_wallJumping && _canSlide)
+        if (!_isGrounded && !_wallJumped && _canSlide)
         {
             // log in console
             Vector2 velocity = _rigidbody2D.velocity;
@@ -453,7 +455,7 @@ public class PlayerMovement : MonoBehaviour
     {
         _rigidbody2D.AddForce(new Vector2(horizontalForce, jumpForce * wallJumpVerticalMultiplierForce),
             ForceMode2D.Impulse);
-        _wallJumping = true;
+        _wallJumped = true;
         Invoke(nameof(ResetWallJump), jumpHorizontalForceDuration);
     }
 
@@ -465,7 +467,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void ResetWallJump()
     {
-        _wallJumping = false;
+        _wallJumped = false;
     }
     
     private PlayerCombat _lazyPlayerCombat; 
@@ -478,5 +480,12 @@ public class PlayerMovement : MonoBehaviour
 
             return _lazyPlayerCombat;
         }
+    }
+    
+    public void ResetJumps()
+    {
+        _consecutiveJumpsMade = 0;
+        _wallJumped = false;
+        _jumped = false;
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using static PlayerMovement;
 
 public class PlayerCombat : MonoBehaviour
@@ -31,19 +32,36 @@ public class PlayerCombat : MonoBehaviour
         
     }
     
+    public Text healthText; // This field will hold the reference to the HealthText UI element.
+
+    private void Awake()
+    {
+        if (healthText == null)
+            Debug.LogError("HealthText is not assigned in PlayerCombat!");
+    }
     private void UpdateState()
     {
         _alive = _health > 0;
+
+        // Update health display
+        if (healthText != null)
+            healthText.text = "Health: " + _health;
     }
     
-    private void ApplyDamage(int damage)
+    public void ApplyDamage(int damage)
     {
         if (_invincible) return;
         _health -= damage;
-        _invincible = true;
+        SetInvincible();
         Invoke(nameof(ResetInvincibility), _invincibilityDurationAfterDamaged);
     }
-    
+
+    private void SetInvincible()
+    {
+        PlayerMovement.ResetJumps();
+        _invincible = true;
+    }
+
     private void ResetInvincibility()
     {
         _invincible = false;
@@ -61,5 +79,4 @@ public class PlayerCombat : MonoBehaviour
             return _lazyPlayerMovement;
         }
     }
-
 }
