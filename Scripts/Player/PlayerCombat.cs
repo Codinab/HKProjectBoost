@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using static PlayerMovement;
 
@@ -14,6 +15,8 @@ public class PlayerCombat : MonoBehaviour
     private float _invincibilityDurationAfterDamaged = 3f;
     private bool _alive = true;
     private bool _invincible = false;
+    
+    
 
     public bool IsInvincible()
     {
@@ -24,6 +27,14 @@ public class PlayerCombat : MonoBehaviour
     {
         get => _alive;
         private set => _alive = value;
+    }
+
+    private void Start()
+    {
+        if (playerMovement == null)
+        {
+            Debug.LogError("PlayerMovement not found on player");
+        }
     }
 
     private void FixedUpdate()
@@ -58,7 +69,7 @@ public class PlayerCombat : MonoBehaviour
 
     private void SetInvincible()
     {
-        PlayerMovement.ResetJumps();
+        playerMovement.ResetJumps();
         _invincible = true;
     }
 
@@ -66,17 +77,10 @@ public class PlayerCombat : MonoBehaviour
     {
         _invincible = false;
     }
+    
+    
+    
+    
 
-    private PlayerMovement _lazyPlayerMovement;
-
-    private PlayerMovement PlayerMovement
-    {
-        get
-        {
-            if (_lazyPlayerMovement != null) return _lazyPlayerMovement;
-
-            _lazyPlayerMovement = GetComponent<PlayerMovement>();
-            return _lazyPlayerMovement;
-        }
-    }
+    public PlayerMovement playerMovement;
 }

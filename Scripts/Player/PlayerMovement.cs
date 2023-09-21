@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Handles the movement mechanics of the player, including walking, jumping, wall jumping, and dashing.
@@ -135,7 +136,17 @@ public class PlayerMovement : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
+        if (playerCombat == null)
+        {
+            Debug.LogError("PlayerCombat not found on player");
+        }
+        
         _rigidbody2D = GetComponent<Rigidbody2D>();
+        if (_rigidbody2D == null)
+        {
+            Debug.LogError("Rigidbody2D not found on player");
+        }
+        
     }
 
     // Maximum velocity of the player
@@ -299,7 +310,7 @@ public class PlayerMovement : MonoBehaviour
     public void GetPushedByEnemy(Vector2 direction, float pushPower)
     {
         // Game the script for this object PlayerCombat
-        if (PlayerCombat.IsInvincible()) return;
+        if (playerCombat.IsInvincible()) return;
         _movementEnabled = false;
         PushPlayerInDirection(direction, pushPower);
         Invoke(nameof(EnableMovement), 0.4f);
@@ -470,17 +481,7 @@ public class PlayerMovement : MonoBehaviour
         _wallJumped = false;
     }
     
-    private PlayerCombat _lazyPlayerCombat; 
-    private PlayerCombat PlayerCombat
-    {
-        get
-        {
-            if (_lazyPlayerCombat != null) return _lazyPlayerCombat;
-            _lazyPlayerCombat = GetComponent<PlayerCombat>();
-
-            return _lazyPlayerCombat;
-        }
-    }
+    [FormerlySerializedAs("PlayerCombat")] public PlayerCombat playerCombat;
     
     public void ResetJumps()
     {
