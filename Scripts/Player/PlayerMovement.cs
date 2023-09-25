@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -99,11 +100,7 @@ public class PlayerMovement : MonoBehaviour
     // Whether the player is currently airborne.
     private bool _inTheAir;
 
-    // Current horizontal direction the player is looking towards.
-    private float _lookingHDirection;
-
-    // Current vertical direction the player is looking towards.
-    private float _lookingVDirection;
+    private Vector2Int _lookingDirection = new Vector2Int(1, 0);
     
     // Whether the player's movement is enabled or disabled.
     private bool _movementEnabled = true;
@@ -209,13 +206,13 @@ public class PlayerMovement : MonoBehaviour
 
     private bool CanDoubleJump()
     {
-        bool wPressed = Input.GetKey(KeyCode.W);
-        if (wPressed && !_jumped && !_wallJumped && _inTheAir && _consecutiveJumpsMade < nSecondJumps)
+        bool jumpKeyPressed = Input.GetKey(KeyCode.V);
+        if (jumpKeyPressed && !_jumped && !_wallJumped && _inTheAir && _consecutiveJumpsMade < nSecondJumps)
         {
             return true;
         }
 
-        if (!wPressed)
+        if (!jumpKeyPressed)
         {
             _jumped = false;
         }
@@ -307,18 +304,28 @@ public class PlayerMovement : MonoBehaviour
     {
         _dashed = false;
     }
+    
+    public void GetPushed(Vector2 direction, float pushPower)
+    {
+        // Game the script for this object PlayerCombat
+        PushPlayerInDirection(direction, pushPower);
+    }
     public void GetPushedByEnemy(Vector2 direction, float pushPower)
     {
         // Game the script for this object PlayerCombat
         if (playerCombat.IsInvincible()) return;
         _movementEnabled = false;
-        PushPlayerInDirection(direction, pushPower);
+        PushPlayerInDirectionRv(direction, pushPower);
         Invoke(nameof(EnableMovement), 0.4f);
     }
 
-    private void PushPlayerInDirection(Vector2 direction, float pushPower)
+    private void PushPlayerInDirectionRv(Vector2 direction, float pushPower)
     {
         ResetVelocities();
+        _rigidbody2D.AddForce(direction * pushPower, ForceMode2D.Impulse);
+    }
+    private void PushPlayerInDirection(Vector2 direction, float pushPower)
+    {
         _rigidbody2D.AddForce(direction * pushPower, ForceMode2D.Impulse);
     }
     private void EnableMovement()
@@ -328,8 +335,7 @@ public class PlayerMovement : MonoBehaviour
     
     private void HandleMovement()
     {
-        UpdateHorizontalLookDirection();
-        UpdateVerticalLookDirection();
+        UpdateDirectionKeyPress();
 
         HandeHorizontalMovement();
     }
@@ -339,19 +345,66 @@ public class PlayerMovement : MonoBehaviour
         // Only apply regular movement if not in a wall jump state
         if (!_wallJumped && _movementEnabled)
         {
-            _rigidbody2D.velocity = new Vector2(_lookingHDirection * moveSpeed, _rigidbody2D.velocity.y);
+            _rigidbody2D.velocity = new Vector2(Input.GetAxis("Horizontal") * moveSpeed, _rigidbody2D.velocity.y);
         }
     }
 
-    private void UpdateHorizontalLookDirection()
+    public Vector2Int GetLookingDirection()
     {
-        _lookingHDirection = Input.GetAxis("Horizontal");
+        return _lookingDirection;
     }
 
-    private void UpdateVerticalLookDirection()
+    private Vector2Int _lastDirection = new Vector2Int(0, 0);
+    private void UpdateDirectionKeyPress()
     {
-        _lookingVDirection = Input.GetAxis("Vertical");
+        bool rightKey = Input.GetKey(KeyCode.D);
+        bool leftKey = Input.GetKey(KeyCode.A);
+        bool upKey = Input.GetKey(KeyCode.W);
+        bool downKey = Input.GetKey(KeyCode.S);
+
+        if (!rightKey && !leftKey && !upKey && !downKey)
+        {
+            _lookingDirection.y = 0;
+            _lookingDirection.x = _lastDirection.x;
+        }
+        else if (leftKey && rightKey)
+        {
+            _lookingDirection.x = -_lastDirection.x;
+            _lookingDirection.y = 0;
+            _lastDirection.x = _lookingDirection.x;
+        }
+        else if (leftKey)
+        {
+            _lastDirection.x = -1;
+            _lookingDirection.x = -1;
+        }
+        else if (rightKey)
+        {
+            _lastDirection.x = 1;
+            _lookingDirection.x = 1;
+        }
+        else if (upKey && downKey)
+        {
+            _lookingDirection.y = -_lastDirection.y;
+            _lookingDirection.x = 0;
+            _lastDirection.y = _lookingDirection.y;
+            _lookingDirection.x = 0;
+        }
+        else if (upKey)
+        {
+            _lookingDirection.y = 1;
+            _lastDirection.y = 1;
+            _lookingDirection.x = 0;
+        }
+        else // downKey
+        {
+            _lookingDirection.y = -1;
+            _lastDirection.y = -1;
+            _lookingDirection.x = 0;
+        }
+        
     }
+    
 
     // Box for ground check
     private Vector2 _boxSize = new Vector2(0.1f, 1f);
@@ -377,13 +430,13 @@ public class PlayerMovement : MonoBehaviour
     
     private bool CanJump()
     {
-        bool wPressed = Input.GetKey(KeyCode.W);
-        if (wPressed && !_jumped && !_wallJumped && (_isGrounded || _isTouchingWallLeft || _isTouchingWallRight))
+        bool jumpKeyPressed = Input.GetKey(KeyCode.V);
+        if (jumpKeyPressed && !_jumped && !_wallJumped && (_isGrounded || _isTouchingWallLeft || _isTouchingWallRight))
         {
             return true;
         }
 
-        if (!wPressed)
+        if (!jumpKeyPressed)
         {
             _jumped = false;
         }
@@ -452,15 +505,22 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void ResetVelocities()
+    public void ResetVelocities()
     {
         _rigidbody2D.velocity = new Vector2(0f, 0f);
     }
 
-    private void ResetVerticalVelocity()
+    public void ResetVerticalVelocity()
     {
         _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, 0);
     }
+
+    public void ResetHorizontalVelocity()
+    {
+        _rigidbody2D.velocity = new Vector2(0, _rigidbody2D.velocity.y);
+
+    }
+    
 
     private void WallJump(float horizontalForce)
     {
@@ -481,7 +541,7 @@ public class PlayerMovement : MonoBehaviour
         _wallJumped = false;
     }
     
-    [FormerlySerializedAs("PlayerCombat")] public PlayerCombat playerCombat;
+    public PlayerCombat playerCombat;
     
     public void ResetJumps()
     {

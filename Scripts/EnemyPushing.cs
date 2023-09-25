@@ -27,13 +27,15 @@ public class EnemyPushing : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.gameObject != player) return;
+        Debug.Log("Enemy Trigger");
+        if (!other.gameObject.CompareTag("Player")) return;
+        Debug.Log(other.gameObject.name + " entered trigger");
         _playerInTrigger = true;
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (other.gameObject != player) return;
+        if (!other.gameObject.CompareTag("Player")) return;
         Debug.Log(other.gameObject.name + " exited trigger");
         _playerInTrigger = false;
     }
